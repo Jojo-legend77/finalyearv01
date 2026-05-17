@@ -109,7 +109,7 @@ const LoginPage = () => {
             {loading ? "Signing in..." : "Login"}
           </Button>
           <p className="text-xs text-muted-foreground text-center">
-            Don&apos;t have an account? <Link to="/register" className="text-primary hover:underline">Register</Link>
+            Need an account? <Link to="/register" className="text-primary hover:underline">Contact administration</Link>
           </p>
           <p className="text-xs text-muted-foreground text-center">
             <Link to="/password-reset" className="text-primary hover:underline">Reset with security question</Link>

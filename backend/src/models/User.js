@@ -54,6 +54,14 @@ const User = sequelize.define(
       type: DataTypes.DATE,
       allowNull: true,
     },
+    passwordResetOtpHash: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
+    passwordResetOtpExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     tableName: "users",

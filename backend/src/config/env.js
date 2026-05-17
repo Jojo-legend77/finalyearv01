@@ -20,6 +20,16 @@ const env = {
   aiServiceUrl: process.env.AI_SERVICE_URL || "http://localhost:8001",
   alertJobEnabled: (process.env.ALERT_JOB_ENABLED || "true").toLowerCase() === "true",
   alertJobIntervalDays: Number(process.env.ALERT_JOB_INTERVAL_DAYS || 7),
+  publicRegistrationEnabled: (process.env.PUBLIC_REGISTRATION_ENABLED || "false").toLowerCase() === "true",
+  appUrl: process.env.APP_URL || "http://localhost:5173",
+  schoolName: process.env.SCHOOL_NAME || "SchoolConnect AI",
+  smtpHost: process.env.SMTP_HOST || "",
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpSecure: (process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
+  smtpFrom: process.env.SMTP_FROM || "",
+  passwordResetOtpMinutes: Number(process.env.PASSWORD_RESET_OTP_MINUTES || 10),
 };
 
 module.exports = env; // <-- export directly

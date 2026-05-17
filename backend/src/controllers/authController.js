@@ -4,6 +4,8 @@ const { User, Notification } = require("../models");
 const { signToken, signRefreshToken, signPasswordResetToken } = require("../utils/jwt");
 const env = require("../config/env");
 const { ok, created, fail } = require("../utils/response");
+const { generateOtp, hashOtp, verifyOtp } = require("../services/otpService");
+const { sendPasswordResetOtpEmail } = require("../services/emailService");
 const {
   SECURITY_QUESTION_OPTIONS,
   SECURITY_SETUP_NOTIFICATION_KIND,
@@ -24,6 +26,23 @@ const allowedQuestionKeys = new Set(SECURITY_QUESTION_OPTIONS.map((item) => item
 const questionLabel = (key) => SECURITY_QUESTION_OPTIONS.find((item) => item.key === key)?.label || key;
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+
+const otpRequestLog = new Map();
+
+const canRequestOtp = (email) => {
+  const now = Date.now();
+  const entry = otpRequestLog.get(email) || { count: 0, windowStart: now };
+  if (now - entry.windowStart > 15 * 60 * 1000) {
+    entry.count = 0;
+    entry.windowStart = now;
+  }
+  if (entry.count >= 5) return false;
+  entry.count += 1;
+  otpRequestLog.set(email, entry);
+  return true;
+};
+
+const otpSuccessMessage = "If your account is eligible, a verification code has been sent to your email.";
 
 const computeRefreshExpiry = () => {
   const value = env.jwtRefreshExpiresIn || "7d";
@@ -57,6 +76,14 @@ const issueTokens = async (user) => {
 
 exports.register = async (req, res) => {
   try {
+    if (!env.publicRegistrationEnabled) {
+      return fail(
+        res,
+        "Self-registration is disabled. Please contact the school administration office to request an account.",
+        403,
+      );
+    }
+
     const { fullName, email, password, role = "parent" } = req.body;
     if (!fullName || !email || !password) {
       return fail(res, "fullName, email and password are required", 400);
@@ -235,6 +262,86 @@ exports.setupSecurityQuestion = async (req, res) => {
   }
 };
 
+exports.forgotPasswordRequestOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      return fail(res, "Email is required.", 400);
+    }
+
+    if (!canRequestOtp(email)) {
+      return fail(res, "Too many code requests. Please wait a few minutes and try again.", 429);
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (user && allowedSecurityRoles.has(user.role)) {
+      const otp = generateOtp();
+      const passwordResetOtpHash = await hashOtp(otp);
+      const expiresAt = new Date(Date.now() + env.passwordResetOtpMinutes * 60 * 1000);
+      await user.update({
+        passwordResetOtpHash,
+        passwordResetOtpExpiresAt: expiresAt,
+      });
+
+      try {
+        await sendPasswordResetOtpEmail({
+          to: user.email,
+          fullName: user.fullName,
+          otp,
+          expiresMinutes: env.passwordResetOtpMinutes,
+        });
+      } catch (mailError) {
+        console.warn("Failed to send password reset OTP email:", mailError.message);
+        return fail(
+          res,
+          "Could not send verification email. Check SMTP settings or try the security question method.",
+          503,
+        );
+      }
+    }
+
+    return ok(res, null, otpSuccessMessage);
+  } catch (error) {
+    return fail(res, error.message, 500);
+  }
+};
+
+exports.forgotPasswordVerifyOtp = async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    const otp = String(req.body?.otp || "").trim();
+    if (!email || !otp) {
+      return fail(res, "Email and verification code are required.", 400);
+    }
+
+    const user = await User.findOne({ where: { email } });
+    if (!user || !allowedSecurityRoles.has(user.role)) {
+      return fail(res, "Invalid email or verification code.", 401);
+    }
+    if (!user.passwordResetOtpHash || !user.passwordResetOtpExpiresAt) {
+      return fail(res, "No active verification code. Request a new code.", 400);
+    }
+    if (new Date(user.passwordResetOtpExpiresAt).getTime() < Date.now()) {
+      return fail(res, "Verification code has expired. Request a new code.", 400);
+    }
+
+    const matches = await verifyOtp(otp, user.passwordResetOtpHash);
+    if (!matches) {
+      return fail(res, "Invalid email or verification code.", 401);
+    }
+
+    await user.update({
+      passwordResetOtpHash: null,
+      passwordResetOtpExpiresAt: null,
+    });
+
+    const resetToken = signPasswordResetToken(user);
+    return ok(res, { resetToken }, "Code verified. You may set a new password.");
+  } catch (error) {
+    return fail(res, error.message, 500);
+  }
+};
+
 exports.forgotPasswordQuestion = async (req, res) => {
   try {
     const email = normalizeEmail(req.body?.email);
@@ -330,6 +437,8 @@ exports.forgotPasswordReset = async (req, res) => {
       passwordHash,
       refreshTokenHash: null,
       refreshTokenExpiresAt: null,
+      passwordResetOtpHash: null,
+      passwordResetOtpExpiresAt: null,
     });
 
     return ok(res, null, "Password updated. Please sign in with your new password.");

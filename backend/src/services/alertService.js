@@ -8,7 +8,11 @@ const {
   ParentStudent,
   Student,
   TeacherAssignment,
+  User,
 } = require("../models");
+const { notifyUser } = require("./notificationService");
+const { sendAlertForwardedEmail } = require("./emailService");
+const env = require("../config/env");
 
 const alertHub = new EventEmitter();
 alertHub.setMaxListeners(0);
@@ -180,6 +184,17 @@ const forwardAlertToParents = async (alert, note = "") => {
   }
 
   const parentIds = links.map((item) => item.parentId);
+  const [student, parents] = await Promise.all([
+    Student.findByPk(alert.studentId),
+    User.findAll({ where: { id: parentIds } }),
+  ]);
+  const studentName = student
+    ? `${student.firstName} ${student.lastName}`.trim()
+    : "your child";
+  const parentMessage = note
+    ? `${alert.message}\n\nTeacher note: ${note}`
+    : `${alert.message}\n\nTeacher reviewed and shared this alert.`;
+  const alertsUrl = `${env.appUrl.replace(/\/$/, "")}/alerts`;
   const forwardedAlerts = [];
 
   for (const parentId of parentIds) {
@@ -189,17 +204,41 @@ const forwardAlertToParents = async (alert, note = "") => {
       recipientRole: "parent",
       originTeacherId: alert.originTeacherId,
       originAlertId: alert.id,
-      title: `Alert from teacher`,
-      message: note
-        ? `${alert.message}\n\nTeacher note: ${note}`
-        : `${alert.message}\n\nTeacher reviewed and shared this alert.`,
+      title: "Alert from teacher",
+      message: parentMessage,
       status: "forwarded",
       source: "manual",
       metadata: {
         note,
+        originAlertId: alert.id,
       },
     });
     forwardedAlerts.push(forwarded);
+
+    const parent = parents.find((item) => item.id === parentId);
+    const notificationTitle = `Update about ${studentName}`;
+    await notifyUser(parentId, "alert", notificationTitle, parentMessage, {
+      kind: "alert_forward",
+      studentId: alert.studentId,
+      alertId: forwarded.id,
+      originAlertId: alert.id,
+    }).catch((error) => {
+      console.warn("Failed to create parent notification for forwarded alert:", error.message);
+    });
+
+    if (parent?.email) {
+      await sendAlertForwardedEmail({
+        to: parent.email,
+        parentName: parent.fullName,
+        studentName,
+        alertTitle: alert.title || "School alert",
+        alertMessage: alert.message,
+        teacherNote: note,
+        alertsUrl,
+      }).catch((error) => {
+        console.warn("Failed to email parent for forwarded alert:", error.message);
+      });
+    }
   }
 
   return forwardedAlerts;

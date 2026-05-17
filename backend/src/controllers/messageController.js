@@ -4,11 +4,14 @@ const {
   Message,
   User,
   Student,
-  ParentStudent,
-  TeacherStudent,
 } = require("../models");
 const { ok, fail } = require("../utils/response");
 const { messageHub } = require("../services/messageService");
+const {
+  buildParentStudentThreads,
+  buildTeacherStudentThreads,
+  canParentAndTeacherMessageAboutStudent,
+} = require("../services/messageContactService");
 
 const buildThreadInclude = () => [
   { model: Student, as: "student", attributes: ["id", "firstName", "lastName", "className", "section"] },
@@ -135,10 +138,13 @@ const sendMessage = async (req, res) => {
         return fail(res, "Invalid teacher selection", 403);
       }
 
-      const parentLink = await ParentStudent.findOne({ where: { parentId, studentId } });
-      const teacherLink = await TeacherStudent.findOne({ where: { teacherId, studentId } });
-      if (!parentLink || !teacherLink) {
-        return fail(res, "Parent and teacher must be linked to the student", 403);
+      const canMessage = await canParentAndTeacherMessageAboutStudent(parentId, teacherId, studentId);
+      if (!canMessage) {
+        return fail(
+          res,
+          "This parent and teacher are not both connected to the selected student.",
+          403,
+        );
       }
 
       thread = await ensureStudentThread({ studentId, parentId, teacherId, userId: req.user.id });
@@ -272,49 +278,14 @@ const unreadCount = async (req, res) => {
 const listContacts = async (req, res) => {
   try {
     if (req.user.role === "parent") {
-      const parentLinks = await ParentStudent.findAll({
-        where: { parentId: req.user.id },
-        include: [{ model: Student, as: "student" }],
-      });
-      const studentIds = parentLinks.map((link) => link.studentId);
-      const teacherLinks = await TeacherStudent.findAll({
-        where: { studentId: { [Op.in]: studentIds } },
-        include: [{ model: User, as: "teacher" }],
-      });
-
-      const studentThreads = teacherLinks.map((link) => {
-        const student = parentLinks.find((item) => item.studentId === link.studentId)?.student;
-        return {
-          student,
-          teacher: link.teacher,
-          parent: { id: req.user.id, fullName: req.user.fullName },
-        };
-      });
-
+      const studentThreads = await buildParentStudentThreads(req.user);
       return ok(res, { studentThreads, directThreads: [] });
     }
 
     if (req.user.role === "teacher") {
-      const teacherLinks = await TeacherStudent.findAll({
-        where: { teacherId: req.user.id },
-        include: [{ model: Student, as: "student" }],
-      });
-      const studentIds = teacherLinks.map((link) => link.studentId);
-      const parentLinks = await ParentStudent.findAll({
-        where: { studentId: { [Op.in]: studentIds } },
-        include: [{ model: User, as: "parent" }],
-      });
+      const studentThreads = await buildTeacherStudentThreads(req.user);
 
-      const studentThreads = parentLinks.map((link) => {
-        const student = teacherLinks.find((item) => item.studentId === link.studentId)?.student;
-        return {
-          student,
-          parent: link.parent,
-          teacher: { id: req.user.id, fullName: req.user.fullName },
-        };
-      });
-
-      const admins = await User.findAll({ where: { role: "admin" } });
+      const admins = await User.findAll({ where: { role: "admin", status: "active" } });
       const directThreads = admins.map((admin) => ({
         teacher: { id: req.user.id, fullName: req.user.fullName },
         admin,

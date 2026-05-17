@@ -47,6 +47,18 @@ const ensureUserSecurityColumns = async () => {
       allowNull: true,
     });
   }
+  if (!table.password_reset_otp_hash) {
+    await queryInterface.addColumn("users", "password_reset_otp_hash", {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    });
+  }
+  if (!table.password_reset_otp_expires_at) {
+    await queryInterface.addColumn("users", "password_reset_otp_expires_at", {
+      type: DataTypes.DATE,
+      allowNull: true,
+    });
+  }
 };
 
 async function start() {

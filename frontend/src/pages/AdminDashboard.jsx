@@ -89,6 +89,11 @@ export default function AdminDashboard() {
     });
   }, [students, studentGradeFilter, studentSearch]);
 
+  const linkableStudents = useMemo(
+    () => filteredStudents.filter((student) => !(student.parents?.length > 0)),
+    [filteredStudents],
+  );
+
   const toggleList = (key) => {
     setVisibleLists((previous) => ({
       ...previous,
@@ -410,15 +415,21 @@ export default function AdminDashboard() {
                             setUserForm((s) => ({ ...s, studentIds: selected }));
                           }}
                         >
-                          {filteredStudents.map((student) => (
+                          {linkableStudents.map((student) => (
                             <option key={student.id} value={student.id}>
                               {student.firstName} {student.lastName} ({student.sectionRecord?.gradeLevel?.name || student.className} {student.sectionRecord?.name || student.section || ""})
                             </option>
                           ))}
                         </select>
                       </label>
-                      {filteredStudents.length ? (
-                        <div className="muted small">Showing {filteredStudents.length} matching students.</div>
+                      {linkableStudents.length ? (
+                        <div className="muted small">
+                          {linkableStudents.length} student(s) available to link (already-linked children are hidden).
+                        </div>
+                      ) : filteredStudents.length ? (
+                        <div className="muted small">
+                          All matching students already have a parent linked. Add a new child below or unlink from another parent first.
+                        </div>
                       ) : (
                         <div className="muted small">No students match the current search or grade filter.</div>
                       )}
@@ -833,3 +844,4 @@ export default function AdminDashboard() {
     </Layout>
   );
 }
+

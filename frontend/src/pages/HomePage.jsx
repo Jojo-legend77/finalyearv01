@@ -51,7 +51,7 @@ function HomePage() {
                   <Link to="/login">Login</Link>
                 </Button>
                 <Button asChild size="sm">
-                  <Link to="/register">Register</Link>
+                  <Link to="/register">Request access</Link>
                 </Button>
               </>
             )}
@@ -81,7 +81,7 @@ function HomePage() {
                     <Link to="/login">Login</Link>
                   </Button>
                   <Button asChild variant="outline" size="lg">
-                    <Link to="/register">Register</Link>
+                    <Link to="/register">Request access</Link>
                   </Button>
                 </>
               )}

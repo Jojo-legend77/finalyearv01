@@ -1,106 +1,145 @@
-import { useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
+import {
+  Sparkles,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  ShieldCheck,
+  ArrowRight,
+  UserPlus,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { AlertBanner } from "@/components/shared/AlertBanner";
+import { SCHOOL_CONTACT } from "../config/schoolContact";
 
 export default function RegisterPage() {
-  const { register, user } = useAuth();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({ fullName: "", email: "", password: "", role: "parent" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
 
   if (user) {
     return <Navigate to={`/${user.role}`} replace />;
   }
 
-  const onChange = (event) => {
-    setForm((prev) => ({ ...prev, [event.target.name]: event.target.value }));
-  };
-
-  const onSubmit = async (event) => {
-    event.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const createdUser = await register(form);
-      navigate(`/${createdUser.role}`);
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="flex items-center justify-between p-4 lg:px-8">
+      <header className="flex items-center justify-between p-4 lg:px-8 border-b border-border/60 glass-strong sticky top-0 z-10">
         <Link to="/" className="flex items-center gap-2 font-semibold">
           <Sparkles className="h-5 w-5 text-primary" />
-          SchoolConnect AI
+          {SCHOOL_CONTACT.platformName}
         </Link>
         <ThemeToggle />
       </header>
 
-      <div className="flex-1 grid lg:grid-cols-2 gap-8 p-4 lg:p-8 max-w-6xl mx-auto w-full">
-        <section className="hidden lg:flex flex-col justify-center gap-6">
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Get started</p>
-            <h1 className="text-4xl font-bold tracking-tight mt-2">Create account</h1>
-            <p className="text-muted-foreground mt-2">Request access for the school platform with your role.</p>
-          </div>
-          <div className="glass rounded-xl p-4 border-amber-500/30 bg-amber-500/5">
-            <strong className="text-sm block">Parent registration notice</strong>
-            <span className="text-xs text-muted-foreground">
-              Please visit the admin office with your child for registration. Contact: +251904834991.
-            </span>
-          </div>
-          <div className="glass rounded-xl p-4">
-            <strong className="text-sm block">Professional onboarding</strong>
-            <span className="text-xs text-muted-foreground">Parents, teachers, and admins use the same secure workflow.</span>
-          </div>
-        </section>
-
-        <form className="glass-strong rounded-2xl p-6 lg:p-8 flex flex-col gap-4 self-center w-full max-w-md mx-auto" onSubmit={onSubmit}>
-          <div>
-            <h2 className="text-xl font-semibold">Register</h2>
-            <p className="text-sm text-muted-foreground">Use the correct role before submitting.</p>
-          </div>
-          <AlertBanner variant="error">{error}</AlertBanner>
-          <div className="space-y-2">
-            <Label htmlFor="fullName">Full name</Label>
-            <Input id="fullName" name="fullName" value={form.fullName} onChange={onChange} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" value={form.email} onChange={onChange} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" name="password" type="password" value={form.password} onChange={onChange} required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="role">Role</Label>
-            <select id="role" name="role" value={form.role} onChange={onChange} className="flex h-9 w-full rounded-lg border border-input bg-background/60 px-3 text-sm">
-              <option value="parent">Parent</option>
-              <option value="teacher">Teacher</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Creating..." : "Create account"}
-          </Button>
-          <p className="text-xs text-muted-foreground text-center">
-            Already have an account? <Link to="/login" className="text-primary hover:underline">Login</Link>
+      <div className="flex-1 p-4 lg:p-10 max-w-5xl mx-auto w-full">
+        <div className="text-center mb-10 space-y-3">
+          <p className="text-xs font-medium uppercase tracking-wider text-primary">Account access</p>
+          <h1 className="text-3xl lg:text-4xl font-bold tracking-tight">Request an account from administration</h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {SCHOOL_CONTACT.platformName} accounts are created by the school admin team. Self-registration is not
+            available online — please contact the office using the details below.
           </p>
-        </form>
+        </div>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="glass-strong rounded-2xl p-6 lg:p-8 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <UserPlus className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold">How to get access</h2>
+                <p className="text-sm text-muted-foreground">{SCHOOL_CONTACT.schoolName}</p>
+              </div>
+            </div>
+
+            <ol className="space-y-4">
+              {SCHOOL_CONTACT.registrationSteps.map((step, index) => (
+                <li key={step} className="flex gap-3 text-sm">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                    {index + 1}
+                  </span>
+                  <span className="text-muted-foreground pt-0.5">{step}</span>
+                </li>
+              ))}
+            </ol>
+
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm">
+              <strong className="block text-foreground mb-1">Parents & guardians</strong>
+              <span className="text-muted-foreground">
+                Please bring your child when visiting the admin office. The team will link your account to the correct
+                student records.
+              </span>
+            </div>
+
+            <Button asChild className="w-full" size="lg">
+              <Link to="/login">
+                I already have an account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
+
+          <div className="space-y-4">
+            <div className="glass rounded-xl p-5 flex gap-4">
+              <Mail className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Admin email</p>
+                <a href={`mailto:${SCHOOL_CONTACT.adminEmail}`} className="font-medium hover:text-primary transition-colors">
+                  {SCHOOL_CONTACT.adminEmail}
+                </a>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-5 flex gap-4">
+              <Phone className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Phone</p>
+                <a href={`tel:${SCHOOL_CONTACT.adminPhone.replace(/\s/g, "")}`} className="font-medium block hover:text-primary">
+                  {SCHOOL_CONTACT.adminPhone}
+                </a>
+                {SCHOOL_CONTACT.adminPhoneAlt ? (
+                  <a
+                    href={`tel:${SCHOOL_CONTACT.adminPhoneAlt.replace(/\s/g, "")}`}
+                    className="text-sm text-muted-foreground block mt-1 hover:text-primary"
+                  >
+                    Alt: {SCHOOL_CONTACT.adminPhoneAlt}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-5 flex gap-4">
+              <MapPin className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Office</p>
+                <p className="font-medium">{SCHOOL_CONTACT.officeLocation}</p>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-5 flex gap-4">
+              <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Office hours</p>
+                <p className="font-medium">{SCHOOL_CONTACT.officeHours}</p>
+              </div>
+            </div>
+
+            <div className="glass rounded-xl p-5 flex gap-4 border-primary/20">
+              <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide">Security</p>
+                <p className="text-sm text-muted-foreground">
+                  After your account is created, you can sign in and set a security question under Notifications for
+                  password recovery, or use email verification codes if configured by the school.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
 
