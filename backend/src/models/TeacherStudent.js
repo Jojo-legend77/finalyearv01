@@ -5,7 +5,7 @@ const TeacherStudent = sequelize.define(
   "TeacherStudent",
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },

@@ -5,7 +5,7 @@ const Student = sequelize.define(
   "Student",
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
@@ -22,7 +22,7 @@ const Student = sequelize.define(
       allowNull: true,
     },
     sectionId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
     className: {

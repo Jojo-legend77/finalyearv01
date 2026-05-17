@@ -5,19 +5,19 @@ const BehaviorReport = sequelize.define(
   "BehaviorReport",
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
     studentId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "students", key: "id" },
       onDelete: "CASCADE",
       onUpdate: "CASCADE",
     },
     teacherId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: { model: "users", key: "id" },
       onDelete: "CASCADE",
