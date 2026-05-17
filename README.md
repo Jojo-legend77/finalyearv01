@@ -3,7 +3,7 @@
 A modular parent-school communication and student performance monitoring platform with:
 
 - **Frontend**: React + Vite
-- **Backend API**: Node.js + Express + Sequelize + MySQL
+- **Backend API**: Node.js + Express + Sequelize + PostgreSQL
 - **AI Service**: Python + FastAPI + scikit-learn
 
 The system is implemented in two stages:
@@ -38,15 +38,23 @@ npm install
 cp .env.example .env
 ```
 
-Update `.env` values for MySQL and JWT as needed.
+Update `.env` values for PostgreSQL and JWT as needed.
 
 ### Database
 
-Create database in MySQL and run schema:
+Create database in PostgreSQL and run schema:
 
 ```bash
-mysql -u root -p < scripts/schema.sql
+psql -U postgres -d parent_school_platform -f scripts/schema.sql
 ```
+
+Render PostgreSQL connection strings use this format:
+
+```text
+postgresql://<user>:<password>@<host>:5432/<database>
+```
+
+If `DATABASE_URL` is set (for example by Render), the backend will use it automatically.
 
 Optional seed:
 
