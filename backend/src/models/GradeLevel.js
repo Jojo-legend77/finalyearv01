@@ -5,7 +5,7 @@ const GradeLevel = sequelize.define(
   "GradeLevel",
   {
     id: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
     },
@@ -15,7 +15,7 @@ const GradeLevel = sequelize.define(
       unique: true,
     },
     sortOrder: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
     },

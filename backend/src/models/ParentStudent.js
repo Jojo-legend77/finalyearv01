@@ -10,7 +10,7 @@ const ParentStudent = sequelize.define(
       primaryKey: true,
     },
     parentId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: "users",
@@ -20,7 +20,7 @@ const ParentStudent = sequelize.define(
       onUpdate: "CASCADE",
     },
     studentId: {
-      type: DataTypes.INTEGER.UNSIGNED,
+      type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: "students",
